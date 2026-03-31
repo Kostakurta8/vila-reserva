@@ -1,5 +1,11 @@
 import pg from "pg";
 
+if (!process.env.DATABASE_URL) {
+  console.error("DATABASE_URL is not set! Check Render environment variables.");
+  console.error("Available env keys:", Object.keys(process.env).filter(k => k.includes("DATABASE") || k.includes("DB") || k.includes("POSTGRES")).join(", ") || "(none found)");
+  process.exit(1);
+}
+
 const pool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
   ssl:

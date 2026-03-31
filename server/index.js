@@ -99,12 +99,10 @@ app.post("/api/reservations", async (req, res) => {
   try {
     const { id, roomId, guestName, checkIn, checkOut } = req.body;
     if (!id || !roomId || !guestName?.trim() || !checkIn || !checkOut) {
-      return res
-        .status(400)
-        .json({
-          error:
-            "Missing required fields: id, roomId, guestName, checkIn, checkOut",
-        });
+      return res.status(400).json({
+        error:
+          "Missing required fields: id, roomId, guestName, checkIn, checkOut",
+      });
     }
     if (checkIn >= checkOut) {
       return res.status(400).json({ error: "checkOut must be after checkIn" });
@@ -147,7 +145,20 @@ app.get("/{*splat}", (_req, res) => {
 
 /* ── Start ───────────────────────────────────────────────────── */
 async function start() {
-  await initDB();
+  console.log("DATABASE_URL set:", !!process.env.DATABASE_URL);
+
+  // Retry DB connection up to 5 times (database may still be provisioning)
+  for (let attempt = 1; attempt <= 5; attempt++) {
+    try {
+      await initDB();
+      break;
+    } catch (err) {
+      console.error(`DB init attempt ${attempt}/5 failed:`, err.message);
+      if (attempt === 5) throw err;
+      await new Promise((r) => setTimeout(r, 3000));
+    }
+  }
+
   app.listen(PORT, () => {
     console.log("");
     console.log("  =============================================");
