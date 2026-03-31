@@ -1,3 +1,9 @@
+databases:
+  - name: vila-reserva-db
+    plan: free
+    databaseName: vilareserva
+    user: vilareserva
+
 services:
   - type: web
     name: vila-reserva
@@ -9,8 +15,10 @@ services:
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
-        sync: false
+        fromDatabase:
+          name: vila-reserva-db
+          property: connectionString
       - key: APP_PASSWORD
-        sync: false
+        value: Gashti123
       - key: JWT_SECRET
         generateValue: true
