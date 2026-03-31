@@ -1,19 +1,19 @@
-import { useState } from 'react';
+import { useState } from "react";
 
 export default function LoginScreen({ onLogin, error: externalError }) {
-  const [password, setPassword] = useState('');
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!password.trim()) return;
     setLoading(true);
-    setError('');
+    setError("");
     try {
       await onLogin(password);
     } catch (err) {
-      setError(err.message || 'Wrong password');
+      setError(err.message || "Wrong password");
     } finally {
       setLoading(false);
     }
@@ -47,8 +47,12 @@ export default function LoginScreen({ onLogin, error: externalError }) {
             <div className="login-error">{error || externalError}</div>
           )}
 
-          <button type="submit" className="login-btn" disabled={loading || !password.trim()}>
-            {loading ? '...' : 'Влез / Login'}
+          <button
+            type="submit"
+            className="login-btn"
+            disabled={loading || !password.trim()}
+          >
+            {loading ? "..." : "Влез / Login"}
           </button>
         </form>
       </div>

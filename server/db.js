@@ -1,8 +1,11 @@
-import pg from 'pg';
+import pg from "pg";
 
 const pool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  ssl:
+    process.env.NODE_ENV === "production"
+      ? { rejectUnauthorized: false }
+      : false,
 });
 
 /* ── Initialize schema + seed ────────────────────────────────── */
@@ -31,13 +34,13 @@ export async function initDB() {
   `);
 
   /* Seed default rooms if empty */
-  const { rows } = await pool.query('SELECT COUNT(*) as count FROM rooms');
+  const { rows } = await pool.query("SELECT COUNT(*) as count FROM rooms");
   if (parseInt(rows[0].count) === 0) {
     const ROOM_CONFIGS = [
-      { count: 8,  type: 'Single', basePrice: 60  },
-      { count: 10, type: 'Double', basePrice: 90  },
-      { count: 6,  type: 'Suite',  basePrice: 140 },
-      { count: 6,  type: 'Family', basePrice: 120 },
+      { count: 8, type: "Single", basePrice: 60 },
+      { count: 10, type: "Double", basePrice: 90 },
+      { count: 6, type: "Suite", basePrice: 140 },
+      { count: 6, type: "Family", basePrice: 120 },
     ];
 
     let seq = 1;
@@ -50,23 +53,30 @@ export async function initDB() {
         seq++;
       }
     }
-    console.log('  [DB] Seeded 30 default rooms.');
+    console.log("  [DB] Seeded 30 default rooms.");
   }
 }
 
 /* ── Room queries ────────────────────────────────────────────── */
 export const getAllRooms = async () => {
-  const { rows } = await pool.query('SELECT id, name, type, "basePrice", "sortOrder" FROM rooms ORDER BY "sortOrder", id');
+  const { rows } = await pool.query(
+    'SELECT id, name, type, "basePrice", "sortOrder" FROM rooms ORDER BY "sortOrder", id',
+  );
   return rows;
 };
 
 export const getRoom = async (id) => {
-  const { rows } = await pool.query('SELECT id, name, type, "basePrice", "sortOrder" FROM rooms WHERE id = $1', [id]);
+  const { rows } = await pool.query(
+    'SELECT id, name, type, "basePrice", "sortOrder" FROM rooms WHERE id = $1',
+    [id],
+  );
   return rows[0] || null;
 };
 
 export const createRoom = async ({ id, name, type, basePrice }) => {
-  const { rows } = await pool.query('SELECT COALESCE(MAX("sortOrder"),0) as m FROM rooms');
+  const { rows } = await pool.query(
+    'SELECT COALESCE(MAX("sortOrder"),0) as m FROM rooms',
+  );
   await pool.query(
     'INSERT INTO rooms (id, name, type, "basePrice", "sortOrder") VALUES ($1, $2, $3, $4, $5)',
     [id, name, type, basePrice, parseInt(rows[0].m) + 1],
@@ -83,7 +93,7 @@ export const updateRoom = async (id, { name, type, basePrice }) => {
 };
 
 export const deleteRoom = async (id) => {
-  const result = await pool.query('DELETE FROM rooms WHERE id = $1', [id]);
+  const result = await pool.query("DELETE FROM rooms WHERE id = $1", [id]);
   return { changes: result.rowCount };
 };
 
@@ -107,7 +117,17 @@ export const createReservation = async (r) => {
   await pool.query(
     `INSERT INTO reservations (id, "roomId", "guestName", "guestContact", "checkIn", "checkOut", price, "paymentStatus", notes)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-    [r.id, r.roomId, r.guestName, r.guestContact || '', r.checkIn, r.checkOut, r.price || 0, r.paymentStatus || 'Unpaid', r.notes || ''],
+    [
+      r.id,
+      r.roomId,
+      r.guestName,
+      r.guestContact || "",
+      r.checkIn,
+      r.checkOut,
+      r.price || 0,
+      r.paymentStatus || "Unpaid",
+      r.notes || "",
+    ],
   );
   return getReservation(r.id);
 };
@@ -118,22 +138,37 @@ export const updateReservation = async (id, r) => {
      SET "roomId" = $1, "guestName" = $2, "guestContact" = $3, "checkIn" = $4, "checkOut" = $5,
          price = $6, "paymentStatus" = $7, notes = $8
      WHERE id = $9`,
-    [r.roomId, r.guestName, r.guestContact || '', r.checkIn, r.checkOut, r.price || 0, r.paymentStatus || 'Unpaid', r.notes || '', id],
+    [
+      r.roomId,
+      r.guestName,
+      r.guestContact || "",
+      r.checkIn,
+      r.checkOut,
+      r.price || 0,
+      r.paymentStatus || "Unpaid",
+      r.notes || "",
+      id,
+    ],
   );
   return getReservation(id);
 };
 
 export const deleteReservation = async (id) => {
-  const result = await pool.query('DELETE FROM reservations WHERE id = $1', [id]);
+  const result = await pool.query("DELETE FROM reservations WHERE id = $1", [
+    id,
+  ]);
   return { changes: result.rowCount };
 };
 
 export const cyclePaymentStatus = async (id) => {
   const res = await getReservation(id);
   if (!res) return null;
-  const cycle = ['Unpaid', 'Partial', 'Paid'];
+  const cycle = ["Unpaid", "Partial", "Paid"];
   const next = cycle[(cycle.indexOf(res.paymentStatus) + 1) % cycle.length];
-  await pool.query('UPDATE reservations SET "paymentStatus" = $1 WHERE id = $2', [next, id]);
+  await pool.query(
+    'UPDATE reservations SET "paymentStatus" = $1 WHERE id = $2',
+    [next, id],
+  );
   return { ...res, paymentStatus: next };
 };
 
